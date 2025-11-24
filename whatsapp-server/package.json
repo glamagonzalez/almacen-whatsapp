@@ -1,0 +1,16 @@
+{
+  "name": "whatsapp-server",
+  "version": "1.0.0",
+  "description": "WhatsApp API Server con Baileys",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@whiskeysockets/baileys": "^6.7.5",
+    "express": "^4.18.2",
+    "pino": "^8.19.0",
+    "qrcode": "^1.5.4",
+    "qrcode-terminal": "^0.12.0"
+  }
+}
