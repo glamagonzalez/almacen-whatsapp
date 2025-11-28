@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>QR WAHA - Directo</title>
+    <style>
+        body { font-family: Arial; text-align: center; padding: 50px; background: #f0f0f0; }
+        img { max-width: 400px; border: 5px solid #25D366; padding: 20px; background: white; }
+    </style>
+</head>
+<body>
+    <h1>📱 Escanea este QR con tu WhatsApp</h1>
+    <div id="qr"></div>
+    <p id="status">Cargando...</p>
+    
+    <script>
+        async function getQR() {
+            try {
+                // Crear sesión
+                await fetch('http://localhost:3000/api/sessions/almacen-whatsapp', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({name: 'almacen-whatsapp'})
+                }).catch(e => console.log('Sesión existe'));
+                
+                // Esperar 2 segundos
+                await new Promise(r => setTimeout(r, 2000));
+                
+                // Obtener QR
+                const res = await fetch('http://localhost:3000/api/almacen-whatsapp/auth/qr');
+                const data = await res.json();
+                
+                if (data.qr) {
+                    document.getElementById('qr').innerHTML = '<img src="' + data.qr + '">';
+                    document.getElementById('status').textContent = '✅ Escanea el código con tu WhatsApp';
+                    checkConnection();
+                } else {
+                    setTimeout(getQR, 2000);
+                }
+            } catch (e) {
+                document.getElementById('status').textContent = 'Error: ' + e.message;
+                setTimeout(getQR, 3000);
+            }
+        }
+        
+        async function checkConnection() {
+            setInterval(async () => {
+                try {
+                    const res = await fetch('http://localhost:3000/api/sessions/almacen-whatsapp');
+                    const data = await res.json();
+                    if (data.status === 'WORKING') {
+                        document.getElementById('status').innerHTML = '<h2 style="color:green;">✅ WhatsApp Conectado!</h2>';
+                        setTimeout(() => window.location.href = 'test-waha.php', 2000);
+                    }
+                } catch (e) {}
+            }, 2000);
+        }
+        
+        getQR();
+    </script>
+</body>
+</html>

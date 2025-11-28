@@ -1,0 +1,184 @@
+{
+  "name": "WhatsApp con WAHA - Sistema Completo",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "nuevo-pedido",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook - Nuevo Pedido",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "c279a906-656a-434b-9331-f2003210bfc5",
+      "webhookId": "b901a674-7fe0-4568-9bc4-2467cee7c0d2"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Formatear mensaje de nuevo pedido\nconst pedido = $input.item.json;\n\nconst productosTexto = pedido.productos?.map(p => \n  `• ${p.nombre} x${p.cantidad} = $${parseFloat(p.subtotal).toFixed(2)}`\n).join('\\n') || 'Sin productos';\n\nconst mensaje = `🛒 *NUEVO PEDIDO #${pedido.pedido_id}*\\n\\n` +\n  `👤 Cliente: ${pedido.cliente_nombre}\\n` +\n  `📱 Teléfono: ${pedido.cliente_telefono}\\n` +\n  `📧 Email: ${pedido.cliente_email}\\n` +\n  `📍 Dirección: ${pedido.direccion}\\n\\n` +\n  `📦 *Productos:*\\n${productosTexto}\\n\\n` +\n  `💰 *TOTAL: $${parseFloat(pedido.total).toFixed(2)}*\\n\\n` +\n  `⏳ Estado: Esperando pago Mercado Pago\\n` +\n  `🕐 Fecha: ${pedido.fecha}`;\n\nreturn [{\n  json: {\n    session: 'almacen-whatsapp',\n    chatId: pedido.cliente_telefono + '@c.us',\n    text: mensaje\n  }\n}];"
+      },
+      "name": "Formatear Mensaje Cliente",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [208, 0],
+      "id": "97254bf0-4605-4853-a8d1-1c23484b8bce"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "name": "Enviar WhatsApp Cliente",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 0],
+      "id": "864cedf7-f430-42eb-a547-463f7a28ddb1"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pago-confirmado",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook - Pago Confirmado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 208],
+      "id": "620bf697-351f-491f-94e8-58897994cbc4",
+      "webhookId": "54875dbc-d5b2-4321-886d-dee747b8e34a"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Mensaje de confirmación de pago\nconst pago = $input.item.json;\n\nconst mensaje = `✅ *PAGO CONFIRMADO*\\n\\n` +\n  `Hola ${pago.cliente_nombre}! 🎉\\n\\n` +\n  `💳 Tu pago de $${parseFloat(pago.total).toFixed(2)} fue aprobado\\n` +\n  `📝 Pedido #${pago.pedido_id}\\n` +\n  `🆔 Pago #${pago.mp_payment_id}\\n\\n` +\n  `🚚 Preparando tu pedido para envío...\\n` +\n  `📦 Te avisaremos cuando salga de nuestro depósito.\\n\\n` +\n  `¡Gracias por tu compra! 😊`;\n\nreturn [{\n  json: {\n    session: 'almacen-whatsapp',\n    chatId: pago.cliente_telefono + '@c.us',\n    text: mensaje\n  }\n}];"
+      },
+      "name": "Formatear Confirmación Pago",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [208, 208],
+      "id": "9a780d6f-8865-4815-b665-9a0590c1c26e"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "name": "Enviar WhatsApp Confirmación",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 208],
+      "id": "393d07e1-ae2f-403f-89b3-0de67ff4422d"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "pedido-enviado",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook - Pedido Enviado",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 400],
+      "id": "fe4a55ea-c458-4e6b-ba8a-2dcb4dd9e93f",
+      "webhookId": "88d681ca-0e7a-40f8-8f3a-a96d94f602e9"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Mensaje de envío\nconst envio = $input.item.json;\n\nconst tracking = envio.tracking ? `\\n🔢 Tracking: ${envio.tracking}` : '';\n\nconst mensaje = `🚚 *PEDIDO EN CAMINO*\\n\\n` +\n  `Hola ${envio.cliente_nombre}! 📦\\n\\n` +\n  `✅ Tu pedido #${envio.pedido_id} fue despachado${tracking}\\n\\n` +\n  `📍 Dirección de entrega:\\n${envio.direccion}\\n\\n` +\n  `⏰ Tiempo estimado: 24-48 hs\\n\\n` +\n  `📱 Cualquier consulta, respondé este mensaje.\\n\\n` +\n  `¡Gracias por confiar en nosotros! 🙏`;\n\nreturn [{\n  json: {\n    session: 'almacen-whatsapp',\n    chatId: envio.cliente_telefono + '@c.us',\n    text: mensaje\n  }\n}];"
+      },
+      "name": "Formatear Mensaje Envío",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [208, 400],
+      "id": "80eb314b-013a-467b-90d8-915db01e689d"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "name": "Enviar WhatsApp Envío",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 400],
+      "id": "3bb79ade-a745-4730-b6f8-54fbab49b026"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "stock-bajo",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "name": "Webhook - Stock Bajo",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [0, 608],
+      "id": "cbaba3fa-cf32-4626-8549-109c9fafe6a6",
+      "webhookId": "1029b56c-8dd3-4430-8e73-0031780b287d"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Alerta de stock bajo al admin\nconst stock = $input.item.json;\n\nconst mensaje = `⚠️ *ALERTA DE STOCK BAJO*\\n\\n` +\n  `📦 Producto: ${stock.producto_nombre}\\n` +\n  `📂 Categoría: ${stock.categoria}\\n` +\n  `📊 Stock actual: ${stock.stock_actual} unidades\\n` +\n  `🔴 Stock mínimo: ${stock.stock_minimo} unidades\\n\\n` +\n  `⚡ Acción requerida: Reabastecer producto`;\n\nreturn [{\n  json: {\n    session: 'almacen-whatsapp',\n    chatId: '5491157816498@c.us',\n    text: mensaje\n  }\n}];"
+      },
+      "name": "Formatear Alerta Stock",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [208, 608],
+      "id": "0afd2660-4c34-4948-a1d2-e57848b345ea"
+    },
+    {
+      "parameters": {
+        "url": "http://localhost:3000/api/sendText",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ $json }}",
+        "options": {}
+      },
+      "name": "Enviar WhatsApp Admin",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [400, 608],
+      "id": "809425d7-67e8-4f12-bd81-2fb0b7876474"
+    }
+  ],
+  "connections": {
+    "Webhook - Nuevo Pedido": {
+      "main": [[{"node": "Formatear Mensaje Cliente", "type": "main", "index": 0}]]
+    },
+    "Formatear Mensaje Cliente": {
+      "main": [[{"node": "Enviar WhatsApp Cliente", "type": "main", "index": 0}]]
+    },
+    "Webhook - Pago Confirmado": {
+      "main": [[{"node": "Formatear Confirmación Pago", "type": "main", "index": 0}]]
+    },
+    "Formatear Confirmación Pago": {
+      "main": [[{"node": "Enviar WhatsApp Confirmación", "type": "main", "index": 0}]]
+    },
+    "Webhook - Pedido Enviado": {
+      "main": [[{"node": "Formatear Mensaje Envío", "type": "main", "index": 0}]]
+    },
+    "Formatear Mensaje Envío": {
+      "main": [[{"node": "Enviar WhatsApp Envío", "type": "main", "index": 0}]]
+    },
+    "Webhook - Stock Bajo": {
+      "main": [[{"node": "Formatear Alerta Stock", "type": "main", "index": 0}]]
+    },
+    "Formatear Alerta Stock": {
+      "main": [[{"node": "Enviar WhatsApp Admin", "type": "main", "index": 0}]]
+    }
+  },
+  "pinData": {}
+}
