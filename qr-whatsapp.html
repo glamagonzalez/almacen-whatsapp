@@ -58,7 +58,7 @@
             
             try {
                 // Obtener QR directamente
-                const response = await fetch('http://localhost:8080/instance/connect/almacen-whatsapp', {
+                const response = await fetch('http://localhost:8080/instance/connect/whatsapp-1157816498', {
                     headers: { 'apikey': 'mi_clave_secreta_123' }
                 });
 
@@ -77,7 +77,7 @@
                 }
 
                 // Verificar estado de conexión
-                const statusResponse = await fetch('http://localhost:8080/instance/connectionState/almacen-whatsapp', {
+                const statusResponse = await fetch('http://localhost:8080/instance/connectionState/whatsapp-1157816498', {
                     headers: { 'apikey': 'mi_clave_secreta_123' }
                 });
                 
