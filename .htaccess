@@ -1,0 +1,31 @@
+# Configuración de Apache para el proyecto
+
+# Habilitar mod_rewrite
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+</IfModule>
+
+# Aumentar límite de carga de archivos
+php_value upload_max_filesize 50M
+php_value post_max_size 50M
+php_value max_execution_time 300
+php_value max_input_time 300
+
+# Seguridad: Prevenir listado de directorios
+Options -Indexes
+
+# Proteger archivos sensibles
+<FilesMatch "\.(sql|log|ini|md)$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Permitir acceso a archivos necesarios
+<FilesMatch "\.(php|html|css|js|jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx)$">
+    Order allow,deny
+    Allow from all
+</FilesMatch>
+
+# Configuración de errores personalizados
+ErrorDocument 404 /almacen-whatsapp-1/index.php
+ErrorDocument 403 /almacen-whatsapp-1/index.php
