@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista Móvil - Almacén</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+        .device-selector {
+            text-align: center;
+            margin: 20px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+        .device-selector button {
+            margin: 5px;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        .device-selector button:hover {
+            background: #0056b3;
+        }
+        .device-selector button.active {
+            background: #28a745;
+        }
+        .phone-frame {
+            margin: 20px auto;
+            background: #000;
+            border-radius: 40px;
+            padding: 15px;
+            box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+        }
+        .phone-frame.iphone {
+            width: 375px;
+            height: 812px;
+        }
+        .phone-frame.android {
+            width: 360px;
+            height: 740px;
+        }
+        .phone-frame.tablet {
+            width: 768px;
+            height: 1024px;
+        }
+        .phone-screen {
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 30px;
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
+        .info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 Vista Móvil - Almacén WhatsApp</h1>
+        
+        <div class="device-selector">
+            <strong>Seleccionar dispositivo:</strong><br><br>
+            <button onclick="setDevice('iphone')" id="btn-iphone" class="active">📱 iPhone 12 Pro</button>
+            <button onclick="setDevice('android')" id="btn-android">📱 Galaxy S20</button>
+            <button onclick="setDevice('tablet')" id="btn-tablet">📱 iPad</button>
+        </div>
+        
+        <div class="phone-frame iphone" id="phone-frame">
+            <div class="phone-screen">
+                <iframe src="http://localhost/almacen-whatsapp-1/" id="iframe"></iframe>
+            </div>
+        </div>
+        
+        <div class="info">
+            <p><strong>💡 Tip:</strong> Esta es una simulación de cómo se ve tu sistema en diferentes dispositivos móviles.</p>
+            <p>El sistema es <strong>100% responsive</strong> gracias a Bootstrap 5.</p>
+        </div>
+    </div>
+
+    <script>
+        function setDevice(type) {
+            const frame = document.getElementById('phone-frame');
+            const buttons = document.querySelectorAll('.device-selector button');
+            
+            // Quitar clase active de todos
+            buttons.forEach(btn => btn.classList.remove('active'));
+            
+            // Quitar todas las clases de dispositivo
+            frame.classList.remove('iphone', 'android', 'tablet');
+            
+            // Agregar clase del dispositivo seleccionado
+            frame.classList.add(type);
+            
+            // Marcar botón como activo
+            document.getElementById('btn-' + type).classList.add('active');
+        }
+    </script>
+</body>
+</html>

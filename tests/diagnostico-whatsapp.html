@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico WhatsApp - WAHA</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        .card {
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        #qrCode {
+            max-width: 300px;
+            margin: 20px auto;
+            display: block;
+        }
+        .log-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 5px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196f3; }
+        .btn-action {
+            margin: 5px;
+        }
+        .status-badge {
+            font-size: 14px;
+            padding: 8px 16px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="mb-4">🔧 Diagnóstico WhatsApp - WAHA</h1>
+
+        <!-- Estado de la Sesión -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">📊 Estado de WhatsApp</h5>
+            </div>
+            <div class="card-body">
+                <div id="sessionStatus" class="text-center mb-3">
+                    <span class="badge bg-secondary status-badge">Verificando...</span>
+                </div>
+                <div id="sessionMessage" class="alert alert-info" style="display:none;"></div>
+                <div class="text-center">
+                    <button class="btn btn-success btn-lg" onclick="obtenerQR()">
+                        📱 Vincular WhatsApp
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Código QR -->
+        <div class="card" id="qrCard" style="display:none;">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">📱 Escanea este código con tu teléfono</h5>
+            </div>
+            <div class="card-body text-center">
+                <div id="qrContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8080/api';
+        const API_KEY = 'changeme';
+        const SESSION_NAME = 'default';
+
+
+
+        async function hacerPeticion(endpoint, method = 'GET', body = null) {
+            const url = `${API_URL}${endpoint}`;
+
+            const options = {
+                method: method,
+                headers: {
+                    'X-Api-Key': API_KEY,
+                    'Content-Type': 'application/json'
+                }
+            };
+
+            if (body) {
+                options.body = JSON.stringify(body);
+            }
+
+            try {
+                const response = await fetch(url, options);
+                const text = await response.text();
+                
+                if (response.ok && text) {
+                    try {
+                        return JSON.parse(text);
+                    } catch {
+                        return text;
+                    }
+                }
+                
+                return null;
+            } catch (error) {
+                return null;
+            }
+        }
+
+        async function verificarEstado() {
+            const sessions = await hacerPeticion('/sessions');
+            
+            if (!sessions || !Array.isArray(sessions)) {
+                mostrarEstado('error', 'No se pudo conectar con WAHA');
+                return;
+            }
+            
+            const session = sessions.find(s => s.name === SESSION_NAME);
+            
+            if (!session) {
+                mostrarEstado('warning', 'Sesión no iniciada');
+                mostrarMensaje('Haz clic en "Vincular WhatsApp" para comenzar', 'info');
+                return;
+            }
+            
+            if (session.status === 'WORKING') {
+                mostrarEstado('success', '✅ WhatsApp Conectado');
+                mostrarMensaje('Tu WhatsApp está vinculado y funcionando correctamente', 'success');
+            } else if (session.status === 'SCAN_QR_CODE') {
+                mostrarEstado('warning', '⚠️ Esperando vincular');
+                mostrarMensaje('Haz clic en "Vincular WhatsApp" para ver el código QR', 'warning');
+            } else if (session.status === 'FAILED') {
+                mostrarEstado('error', '❌ Error de conexión');
+                mostrarMensaje('Hubo un problema. Intenta vincular nuevamente.', 'danger');
+            } else {
+                mostrarEstado('secondary', 'Estado: ' + session.status);
+            }
+        }
+        
+        function mostrarEstado(tipo, texto) {
+            const statusDiv = document.getElementById('sessionStatus');
+            const clases = {
+                'success': 'bg-success',
+                'warning': 'bg-warning',
+                'error': 'bg-danger',
+                'secondary': 'bg-secondary'
+            };
+            statusDiv.innerHTML = `<span class="badge ${clases[tipo]} status-badge">${texto}</span>`;
+        }
+        
+        function mostrarMensaje(texto, tipo) {
+            const messageDiv = document.getElementById('sessionMessage');
+            messageDiv.className = `alert alert-${tipo}`;
+            messageDiv.textContent = texto;
+            messageDiv.style.display = 'block';
+        }
+
+
+
+        async function obtenerQR() {
+            const qrCard = document.getElementById('qrCard');
+            const qrContainer = document.getElementById('qrContainer');
+            
+            qrCard.style.display = 'block';
+            qrContainer.innerHTML = '<div class="spinner-border text-success" role="status"><span class="visually-hidden">Generando QR...</span></div>';
+            
+            try {
+                const response = await fetch(`${API_URL}/${SESSION_NAME}/auth/qr`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Api-Key': API_KEY
+                    }
+                });
+
+                if (response.ok) {
+                    const blob = await response.blob();
+                    const imageUrl = URL.createObjectURL(blob);
+                    
+                    qrContainer.innerHTML = `
+                        <img id="qrCode" src="${imageUrl}" alt="Código QR" style="max-width: 300px;">
+                        <div class="mt-3">
+                            <h5>📱 Cómo vincular:</h5>
+                            <ol class="text-start" style="max-width: 400px; margin: 0 auto;">
+                                <li>Abre WhatsApp en tu teléfono</li>
+                                <li>Ve a <strong>Menú (⋮)</strong> > <strong>Dispositivos Vinculados</strong></li>
+                                <li>Toca <strong>"Vincular un dispositivo"</strong></li>
+                                <li>Escanea este código QR</li>
+                            </ol>
+                        </div>
+                        <div class="alert alert-warning mt-3" style="max-width: 500px; margin: 0 auto;">
+                            <strong>⚠️ Importante:</strong> Si WhatsApp no te permite vincular el dispositivo, 
+                            Meta puede haber bloqueado temporalmente esta función. 
+                            Espera 24 horas antes de intentar nuevamente.
+                        </div>
+                    `;
+                    
+                    // Auto-verificar estado cada 5 segundos
+                    const interval = setInterval(async () => {
+                        const sessions = await hacerPeticion('/sessions');
+                        if (sessions && Array.isArray(sessions)) {
+                            const session = sessions.find(s => s.name === SESSION_NAME);
+                            if (session && session.status === 'WORKING') {
+                                clearInterval(interval);
+                                qrContainer.innerHTML = `
+                                    <div class="alert alert-success">
+                                        <h4>🎉 ¡WhatsApp Vinculado!</h4>
+                                        <p>Tu dispositivo se ha conectado correctamente.</p>
+                                    </div>
+                                `;
+                                verificarEstado();
+                            }
+                        }
+                    }, 5000);
+                    
+                } else {
+                    const errorText = await response.text();
+                    qrContainer.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Error:</strong> No se pudo generar el código QR.<br>
+                            <small>${errorText}</small>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                qrContainer.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Error de conexión:</strong> ${error.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Verificar estado al cargar la página
+        window.onload = function() {
+            verificarEstado();
+        };
+    </script>
+</body>
+</html>

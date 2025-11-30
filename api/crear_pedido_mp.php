@@ -47,21 +47,25 @@ try {
     $pedidoId = $pdo->lastInsertId();
     
     // ==========================================
-    // CREAR PREFERENCIA DE MERCADO PAGO
+    // CREAR PREFERENCIA DE MERCADO PAGO (SDK v3.x)
     // ==========================================
+    require_once '../vendor/autoload.php';
+    require_once '../config/config.php';
+    
+    MercadoPago\MercadoPagoConfig::setAccessToken(MERCADOPAGO_ACCESS_TOKEN);
+    $client = new MercadoPago\Client\Preference\PreferenceClient();
     
     // Preparar items para Mercado Pago
     $items = [];
     foreach ($productos as $prod) {
         $items[] = [
             'title' => $prod['nombre'],
-            'quantity' => $prod['cantidad'],
-            'unit_price' => floatval($prod['precio']),
-            'currency_id' => 'ARS' // Pesos argentinos
+            'quantity' => (int)$prod['cantidad'],
+            'unit_price' => (float)$prod['precio']
         ];
     }
     
-    // Datos de la preferencia
+    // Datos de la preferencia SIN auto_return
     $preferenceData = [
         'items' => $items,
         'payer' => [
@@ -71,36 +75,19 @@ try {
             ],
             'email' => $email ?: 'cliente@ejemplo.com'
         ],
-        'back_urls' => [
-            'success' => 'http://localhost/almacen-whatsapp-1/pago_exitoso.php?pedido_id=' . $pedidoId,
-            'failure' => 'http://localhost/almacen-whatsapp-1/pago_fallido.php?pedido_id=' . $pedidoId,
-            'pending' => 'http://localhost/almacen-whatsapp-1/pago_pendiente.php?pedido_id=' . $pedidoId
-        ],
-        'auto_return' => 'approved',
-        'notification_url' => MP_NOTIFICATION_URL . '?pedido_id=' . $pedidoId,
-        'external_reference' => strval($pedidoId),
-        'statement_descriptor' => 'Almacén WhatsApp'
+        'notification_url' => 'http://' . $_SERVER['HTTP_HOST'] . '/almacen-whatsapp-1/webhook_mp.php?pedido_id=' . $pedidoId,
+        'external_reference' => 'ORDEN-' . $pedidoId,
+        'statement_descriptor' => 'ALMACEN DIGITAL'
     ];
     
-    // Llamar a la API de Mercado Pago
-    $ch = curl_init('https://api.mercadopago.com/checkout/preferences');
-    curl_setopt_array($ch, [
-        CURLOPT_RETURNTRANSFER => true,
-        CURLOPT_POST => true,
-        CURLOPT_HTTPHEADER => [
-            'Authorization: Bearer ' . MP_ACCESS_TOKEN,
-            'Content-Type: application/json'
-        ],
-        CURLOPT_POSTFIELDS => json_encode($preferenceData)
-    ]);
+    // Crear preferencia
+    $preference = $client->create($preferenceData);
+    $mpResponse = [
+        'id' => $preference->id,
+        'init_point' => $preference->init_point
+    ];
     
-    $response = curl_exec($ch);
-    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-    curl_close($ch);
-    
-    $mpResponse = json_decode($response, true);
-    
-    if ($httpCode === 201 && isset($mpResponse['id'])) {
+    if (isset($mpResponse['id'])) {
         // Actualizar pedido con datos de MP
         $stmtUpdate = $pdo->prepare("
             UPDATE pedidos 

@@ -7,7 +7,7 @@
 
 // Configuración de la base de datos
 $host = 'localhost';
-$dbname = 'almacen_whatsapp';
+$dbname = 'almacen_digital';
 $username = 'root';
 $password = '';
 

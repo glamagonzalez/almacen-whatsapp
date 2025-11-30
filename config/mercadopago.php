@@ -6,16 +6,15 @@
  * https://www.mercadopago.com.ar/developers/panel/app
  */
 
-// Credenciales de Mercado Pago
-// REEMPLAZA ESTOS VALORES CON TUS CREDENCIALES REALES
-define('MP_ACCESS_TOKEN', 'TU_ACCESS_TOKEN_AQUI');
-define('MP_PUBLIC_KEY', 'TU_PUBLIC_KEY_AQUI');
+// Credenciales de Mercado Pago - PRODUCCIÓN
+define('MP_ACCESS_TOKEN', 'APP_USR-7544114614777894-112915-efb36d1a0152e91909406f8f3710edfc-62732469');
+define('MP_PUBLIC_KEY', 'APP_USR-3c847c3f-cc9c-4aba-b2a9-62899023373f');
 
 // URL de notificaciones (webhook)
 define('MP_NOTIFICATION_URL', 'http://localhost/almacen-whatsapp-1/webhook_mp.php');
 
 // Configuración general
-define('MP_MODO_PRUEBA', true); // true = testing, false = producción
+define('MP_MODO_PRUEBA', false); // true = testing, false = producción
 
 /**
  * PASOS PARA OBTENER TUS CREDENCIALES:

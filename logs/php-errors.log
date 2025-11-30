@@ -1,0 +1,12 @@
+[29-Nov-2025 16:11:28 America/Argentina/Buenos_Aires] PHP Fatal error:  Uncaught Error: Class "MercadoPago\SDK" not found in C:\xampp\htdocs\almacen-whatsapp-1\test-mercadopago.php:141
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\almacen-whatsapp-1\test-mercadopago.php on line 141
+[29-Nov-2025 16:13:11 America/Argentina/Buenos_Aires] PHP Fatal error:  Uncaught Error: Class "MercadoPago\SDK" not found in C:\xampp\htdocs\almacen-whatsapp-1\test-mercadopago.php:141
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\almacen-whatsapp-1\test-mercadopago.php on line 141
+[29-Nov-2025 16:13:40 America/Argentina/Buenos_Aires] PHP Fatal error:  Uncaught Error: Class "MercadoPago\SDK" not found in C:\xampp\htdocs\almacen-whatsapp-1\test-mercadopago.php:141
+Stack trace:
+#0 {main}
+  thrown in C:\xampp\htdocs\almacen-whatsapp-1\test-mercadopago.php on line 141

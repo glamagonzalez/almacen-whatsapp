@@ -10,7 +10,7 @@ session_start();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Almacén WhatsApp - Gestor de Archivos</title>
+    <title>Almacén Digital - Gestor de Archivos</title>
     
     <!-- Dropzone CSS -->
     <link rel="stylesheet" href="https://unpkg.com/dropzone@5/dist/min/dropzone.min.css" />
@@ -90,7 +90,7 @@ session_start();
     <div class="main-container">
         <!-- Header -->
         <div class="header-title">
-            <h1><i class="fas fa-box"></i> Almacén WhatsApp</h1>
+            <h1><i class="fas fa-box"></i> Almacén Digital</h1>
             <p class="lead">Sistema de Gestión de Archivos y Documentos</p>
         </div>
 
