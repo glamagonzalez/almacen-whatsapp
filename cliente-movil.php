@@ -3,7 +3,14 @@ require_once 'config/database.php';
 
 // Obtener productos activos
 $stmt = $pdo->prepare("
-    SELECT id, nombre, descripcion, precio, stock, categoria, imagen
+    SELECT 
+        id, 
+        nombre, 
+        descripcion, 
+        precio_venta as precio, 
+        stock_actual as stock, 
+        categoria, 
+        COALESCE(imagen_url, imagen) as imagen
     FROM productos 
     WHERE activo = 1
     ORDER BY nombre ASC
