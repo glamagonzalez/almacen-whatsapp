@@ -1,3 +1,16 @@
+<?php
+require_once 'config/database.php';
+
+// Obtener productos activos
+$stmt = $pdo->prepare("
+    SELECT id, nombre, descripcion, precio, stock, categoria, imagen
+    FROM productos 
+    WHERE activo = 1
+    ORDER BY nombre ASC
+");
+$stmt->execute();
+$productos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -175,14 +188,45 @@
 
         <!-- Productos Grid -->
         <div class="row" id="productos-container">
-            <!-- Los productos se cargarán aquí dinámicamente -->
-        </div>
-
-        <!-- Estado vacío -->
-        <div class="empty-state" id="empty-state" style="display: none;">
-            <i class="fas fa-box-open"></i>
-            <h3>No hay productos disponibles</h3>
-            <p>Vuelve pronto para ver nuestros productos</p>
+            <?php if (count($productos) > 0): ?>
+                <?php foreach ($productos as $producto): ?>
+                    <div class="col-12 col-sm-6 col-md-4">
+                        <div class="product-card">
+                            <img src="<?php echo $producto['imagen'] ?: 'https://via.placeholder.com/300x200?text=Sin+Imagen'; ?>" 
+                                 class="product-image" 
+                                 alt="<?php echo htmlspecialchars($producto['nombre']); ?>">
+                            <div class="product-info">
+                                <div class="product-name"><?php echo htmlspecialchars($producto['nombre']); ?></div>
+                                <div class="product-price">$<?php echo number_format($producto['precio'], 2); ?></div>
+                                <?php
+                                $stock = $producto['stock'];
+                                if ($stock <= 0) {
+                                    echo '<span class="stock-badge out-stock">Sin stock</span>';
+                                } elseif ($stock <= 5) {
+                                    echo '<span class="stock-badge low-stock">Quedan ' . $stock . '</span>';
+                                } else {
+                                    echo '<span class="stock-badge in-stock">Disponible</span>';
+                                }
+                                ?>
+                                <button class="btn-add-cart" 
+                                        onclick="agregarAlCarrito(<?php echo $producto['id']; ?>, '<?php echo htmlspecialchars($producto['nombre']); ?>', <?php echo $producto['precio']; ?>, '<?php echo htmlspecialchars($producto['imagen']); ?>')"
+                                        <?php echo $producto['stock'] <= 0 ? 'disabled' : ''; ?>>
+                                    <i class="fas fa-cart-plus"></i> 
+                                    <?php echo $producto['stock'] <= 0 ? 'Sin Stock' : 'Agregar al Carrito'; ?>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            <?php else: ?>
+                <div class="col-12">
+                    <div class="empty-state">
+                        <i class="fas fa-box-open"></i>
+                        <h3>No hay productos disponibles</h3>
+                        <p>Vuelve pronto para ver nuestros productos</p>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
     </div>
 
@@ -194,59 +238,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // Cargar productos desde la API
-        async function cargarProductos() {
-            try {
-                const response = await fetch('api/listar_productos.php');
-                const productos = await response.json();
-                
-                const container = document.getElementById('productos-container');
-                const emptyState = document.getElementById('empty-state');
-                
-                if (productos.length === 0) {
-                    emptyState.style.display = 'block';
-                    return;
-                }
-                
-                container.innerHTML = productos.map(producto => `
-                    <div class="col-12 col-sm-6 col-md-4">
-                        <div class="product-card">
-                            <img src="${producto.imagen || 'https://via.placeholder.com/300x200?text=Sin+Imagen'}" 
-                                 class="product-image" 
-                                 alt="${producto.nombre}">
-                            <div class="product-info">
-                                <div class="product-name">${producto.nombre}</div>
-                                <div class="product-price">$${parseFloat(producto.precio).toFixed(2)}</div>
-                                ${getStockBadge(producto.stock)}
-                                <button class="btn-add-cart" 
-                                        onclick="agregarAlCarrito(${producto.id})"
-                                        ${producto.stock <= 0 ? 'disabled' : ''}>
-                                    <i class="fas fa-cart-plus"></i> 
-                                    ${producto.stock <= 0 ? 'Sin Stock' : 'Agregar al Carrito'}
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `).join('');
-                
-            } catch (error) {
-                console.error('Error al cargar productos:', error);
-                document.getElementById('empty-state').style.display = 'block';
-            }
-        }
-
-        function getStockBadge(stock) {
-            if (stock <= 0) {
-                return '<span class="stock-badge out-stock">Sin stock</span>';
-            } else if (stock <= 5) {
-                return `<span class="stock-badge low-stock">Quedan ${stock}</span>`;
-            } else {
-                return '<span class="stock-badge in-stock">Disponible</span>';
-            }
-        }
-
-        function agregarAlCarrito(productoId) {
-            // Obtener carrito actual
+        function agregarAlCarrito(productoId, nombre, precio, imagen) {
+            // Obtener carrito actual (formato de carrito-mejorado.js)
             let carrito = JSON.parse(localStorage.getItem('carrito') || '[]');
             
             // Buscar si el producto ya está en el carrito
@@ -255,7 +248,13 @@
             if (index !== -1) {
                 carrito[index].cantidad++;
             } else {
-                carrito.push({ id: productoId, cantidad: 1 });
+                carrito.push({ 
+                    id: productoId, 
+                    nombre: nombre,
+                    precio: precio,
+                    imagen: imagen,
+                    cantidad: 1 
+                });
             }
             
             // Guardar en localStorage
@@ -302,9 +301,8 @@
             }, 2000);
         }
 
-        // Cargar productos al iniciar
+        // Actualizar contador al cargar
         document.addEventListener('DOMContentLoaded', () => {
-            cargarProductos();
             actualizarContadorCarrito();
         });
     </script>
